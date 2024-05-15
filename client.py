@@ -1,4 +1,4 @@
-#client
+#client.py
 from datetime import datetime
 from datetime import timedelta
 import jsonrpclib
@@ -11,7 +11,8 @@ def select_menu():
     global pilihan
     print('======= Selamat datang di Rumah Sakit Semangka! =======')
     print('1. Menampilkan daftar klinik yang buka')
-    print('2. Registrasi')
+    print('2. Menampilkan seluruh daftar klinik beserta jadwal dokter')
+    print('3. Registrasi')
     print('0. Keluar')
     pilihan = input('Masukkan pilihan menu: ')
     while pilihan != '0':
@@ -19,6 +20,9 @@ def select_menu():
             tampil_daftar()
             return_menu()
         elif pilihan == '2':
+            tampil_daftar_dokter()  # Memanggil method untuk menampilkan jadwal dokter dari server
+            return_menu()
+        elif pilihan == '3':
             registrasi()
             return_menu()
         else:
@@ -37,14 +41,7 @@ def return_menu():
         print()
         select_menu()
     elif kembali == 'N' or kembali == 'n':
-        pilihan = '0'  
-
-def time_in_range(start, end, x):
-    """ Mengembalikan True jika x berada dalam range [start, end] """
-    if start <= end:
-        return start <= x <= end
-    else:
-        return start <= x or x <= end
+        pilihan = '0'
 
 def tampil_daftar():
     """ Menampilkan daftar klinik yang buka saat program dijalankan """
@@ -66,6 +63,11 @@ def tampil_daftar():
             print()
     else:
         print('Tidak ada klinik yang buka')
+
+def tampil_daftar_dokter():
+    """ Memanggil method di server untuk menampilkan daftar klinik beserta jadwal dokter """
+    daftar_dokter = s.tampil_daftar_dokter()
+    print(daftar_dokter)
 
 def registrasi():
     """ Fungsi untuk melakukan registrasi """
