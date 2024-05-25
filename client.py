@@ -35,7 +35,7 @@ def return_menu():
     print()
     kembali = input('Kembali ke menu utama? (Y/N): ')
     while kembali != 'Y' and kembali != 'y' and kembali != 'N' and kembali != 'n':
-            kembali = input('Kembali ke menu utama? (Y/N): ')
+        kembali = input('Kembali ke menu utama? (Y/N): ')
     if kembali == 'Y' or kembali == 'y':
         print()
         select_menu()
@@ -48,17 +48,18 @@ def tampil_daftar():
     waktu = tgl.strftime("%H:%M")
     day = tgl.strftime("%d")
     # jika hari sudah berganti, maka data antrian pada seluruh klinik akan direset
-    if (day != s.get_hari()):
+    if day != s.get_hari():
         s.reset_antrian()
         s.set_hari(day)
     klinik_buka = s.get_klinik_buka(waktu)
     if klinik_buka:
         for klinik in klinik_buka:
+            jml_pasien = sum(len(antrian) for antrian in klinik['antrian_hari'].values())
             print('[', klinik['id'], ']', sep='')
             print('Nomor Klinik            :', klinik['id'])
             print('Nama Klinik             :', klinik['nama'])
             print('Jam Buka - Jam Tutup    :', klinik['buka'], '-', klinik['tutup'])
-            print('Jumlah Pasien Terdaftar :', sum(len(dokter['antrian_hari'][hari]) for dokter in klinik['dokter'] for hari in dokter['hari_kerja']))
+            print('Jumlah Pasien Terdaftar :', jml_pasien)
             print()
     else:
         print('Tidak ada klinik yang buka')
@@ -67,6 +68,13 @@ def tampil_daftar_dokter():
     """ Memanggil method di server untuk menampilkan daftar klinik beserta jadwal dokter """
     daftar_dokter = s.tampil_daftar_dokter()
     print(daftar_dokter)
+
+def time_in_range(start, end, current):
+    """ Fungsi untuk mengecek apakah waktu current berada di antara waktu start dan end """
+    start_time = datetime.strptime(start, "%H:%M").time()
+    end_time = datetime.strptime(end, "%H:%M").time()
+    current_time = datetime.strptime(current, "%H:%M").time()
+    return start_time <= current_time <= end_time
 
 def registrasi():
     """ Fungsi untuk melakukan registrasi """
@@ -81,11 +89,11 @@ def registrasi():
     waktu = tgl_input.strftime("%H:%M")
     day = tgl_input.strftime("%d")
     # jika hari sudah berganti, maka data antrian pada seluruh klinik akan direset
-    if (day != s.get_hari()):
+    if day != s.get_hari():
         s.reset_antrian()
         s.set_hari(day)
     # menerima input id klinik, selama tidak valid atau klinik tersebut tidak buka, akan diminta input kembali
-    while s.get_klinik(id) == -1 or (not s.time_in_range(klinik['buka'], klinik['tutup'], waktu)):
+    while s.get_klinik(id) == -1 or not time_in_range(klinik['buka'], klinik['tutup'], waktu):
         print('Klinik tidak valid, silahkan pilih kembali')
         ids = input('Masukkan nomor klinik: ')
         while not ids.isdigit():
@@ -97,15 +105,16 @@ def registrasi():
         waktu = tgl_input.strftime("%H:%M")
         day = tgl_input.strftime("%d")
         # jika hari sudah berganti, maka data antrian pada seluruh klinik akan direset
-        if (day != s.get_hari()):
+        if day != s.get_hari():
             s.reset_antrian()
             s.set_hari(day)
     # menerima input data pasien
     no_rek = input('Masukkan nomor rekam medis: ')
     nama = input('Masukkan nama: ')
     tgl_lahir = input('Masukkan tanggal lahir (dd-mm-yyyy): ')
+    tgl_input_str = tgl_input.strftime("%Y-%m-%d %H:%M")
     # memanggil fungsi regis() yang ada di komputer remote
-    no_antri = s.regis(id, no_rek, nama, tgl_lahir, str(tgl_input))
+    no_antri = s.regis(id, no_rek, nama, tgl_lahir, tgl_input_str)
     # memanggil fungsi get_antri() yang ada di komputer remote
     antri = s.get_antri(id, no_antri)
     # memanggil fungsi get_klinik() yang ada di komputer remote
@@ -113,10 +122,9 @@ def registrasi():
     # menampilkan data antrian yang didapatkan
     print('-------------------------------------------------------')
     print('Nomor antrian:', antri['no'])
-    total_antrian = sum(len(dokter['antrian_hari'][hari]) for dokter in klinik['dokter'] for hari in dokter['hari_kerja'])
-    print('Antrian di depan Anda:', total_antrian - 1)
+    print('Antrian di depan Anda:', len(klinik['antrian_hari'][day])-1)
     # menghitung waktu giliran pasien masuk ke klinik
-    lama_antri = (total_antrian - 1) * klinik['waktu_pasien']
+    lama_antri = (len(klinik['antrian_hari'][day])-1) * klinik['waktu_pasien']
     waktu_masuk = tgl_input + timedelta(minutes=lama_antri)
     print('Perkiraan waktu Anda mendapat giliran:', waktu_masuk)
 
