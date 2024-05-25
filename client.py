@@ -1,4 +1,3 @@
-#client.py
 from datetime import datetime
 from datetime import timedelta
 import jsonrpclib
@@ -59,7 +58,7 @@ def tampil_daftar():
             print('Nomor Klinik            :', klinik['id'])
             print('Nama Klinik             :', klinik['nama'])
             print('Jam Buka - Jam Tutup    :', klinik['buka'], '-', klinik['tutup'])
-            print('Jumlah Pasien Terdaftar :', klinik['jml_pasien'])
+            print('Jumlah Pasien Terdaftar :', sum(len(dokter['antrian_hari'][hari]) for dokter in klinik['dokter'] for hari in dokter['hari_kerja']))
             print()
     else:
         print('Tidak ada klinik yang buka')
@@ -86,7 +85,7 @@ def registrasi():
         s.reset_antrian()
         s.set_hari(day)
     # menerima input id klinik, selama tidak valid atau klinik tersebut tidak buka, akan diminta input kembali
-    while s.get_klinik(id) == -1 or (not time_in_range(klinik['buka'], klinik['tutup'], waktu)):
+    while s.get_klinik(id) == -1 or (not s.time_in_range(klinik['buka'], klinik['tutup'], waktu)):
         print('Klinik tidak valid, silahkan pilih kembali')
         ids = input('Masukkan nomor klinik: ')
         while not ids.isdigit():
@@ -114,9 +113,10 @@ def registrasi():
     # menampilkan data antrian yang didapatkan
     print('-------------------------------------------------------')
     print('Nomor antrian:', antri['no'])
-    print('Antrian di depan Anda:', klinik['jml_pasien']-1)
+    total_antrian = sum(len(dokter['antrian_hari'][hari]) for dokter in klinik['dokter'] for hari in dokter['hari_kerja'])
+    print('Antrian di depan Anda:', total_antrian - 1)
     # menghitung waktu giliran pasien masuk ke klinik
-    lama_antri = (klinik['jml_pasien']-1) * klinik['waktu_pasien']
+    lama_antri = (total_antrian - 1) * klinik['waktu_pasien']
     waktu_masuk = tgl_input + timedelta(minutes=lama_antri)
     print('Perkiraan waktu Anda mendapat giliran:', waktu_masuk)
 
